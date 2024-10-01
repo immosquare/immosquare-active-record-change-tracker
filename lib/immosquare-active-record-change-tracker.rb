@@ -55,6 +55,35 @@ module ImmosquareActiveRecordChangeTracker
           previous_changes.except(*excluded_fields.uniq.map(&:to_s))
         end
 
+
+      ##============================================================##
+      ## Gestion de Globalize
+      ##============================================================##
+      if respond_to?(:translated_attribute_names)
+        translated_attribute_names = send(:translated_attribute_names).map(&:to_sym)
+        globalize_changes          = {}
+
+        translations.each do |translation|
+          locale = translation.locale.to_sym
+          translation.previous_changes.each do |attribute, values|
+            attribute = attribute.to_sym
+            next if !attribute.in?(translated_attribute_names)
+
+            old_value, new_value = values
+            ##============================================================##
+            ## On ne sauvegarde pas les changements si les valeurs sont identiques
+            ## ou si on passe de nil à "" ou de "" à nil
+            ##============================================================##
+            next if old_value == new_value || (old_value.blank? && new_value.blank?)
+
+            globalize_changes[attribute] ||= {}
+            globalize_changes[attribute][locale] = [old_value, new_value]
+          end
+        end
+        changes_to_save.merge!(globalize_changes)
+      end
+
+
       ##============================================================##
       ## Si aucun changement à sauvegarder, on sort
       ##============================================================##
@@ -68,7 +97,7 @@ module ImmosquareActiveRecordChangeTracker
       ##============================================================##
       ## Gestion de l'event
       ##============================================================##
-      event = self.previously_new_record? ? "create" : "update"
+      event = previously_new_record? ? "create" : "update"
 
       ##============================================================##
       ## On crée un enregistrement dans la table d'historique
