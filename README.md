@@ -27,18 +27,19 @@ then Generate the migration to create the `active_record_change_trackers` table:
 
 ```bash
 rails generate immosquare_active_record_change_tracker:install
+
+
+# create_table(:active_record_change_trackers) do |t|
+#   t.references(:recordable, :polymorphic => true, :foreign_key => false, :index => false, :null => false)
+#   t.references(:modifier,   :polymorphic => true, :foreign_key => false, :index => false, :null => true)
+#   t.text(:data, :null => false, :limit => 4_294_967_295)
+#   t.datetime(:created_at, :null => false)
+# end
+# add_index(:active_record_change_trackers, [:recordable_type, :recordable_id])
+# add_index :active_record_change_trackers, [:modifier_type, :modifier_id]
 ```
 
-```ruby
-create_table(:active_record_change_trackers) do |t|
-  t.references(:recordable, :polymorphic => true, :foreign_key => false, :index => false, :null => false)
-  t.references(:modifier, :polymorphic => true, :foreign_key => false, :index => false, :null => true)
-  t.text(:data, :null => false, :limit => 4_294_967_295)
-  t.datetime(:created_at, :null => false)
-end
-add_index(:active_record_change_trackers, [:recordable_type, :recordable_id])
-add_index :active_record_change_trackers, [:modifier_type, :modifier_id]
-```
+
 
 Then run the migration :
 
@@ -93,7 +94,7 @@ The modifier can be specified by providing a block to track_active_record_change
 
 ```ruby
 class YourModel < ApplicationRecord
-  track_active_record_changes(except: [:locale]) do
+  track_active_record_changes(except: [:attribute1]) do
     ## Your Logic to get the modifier
     Current.admin.present? ? Current.admin : Current.user
   end
