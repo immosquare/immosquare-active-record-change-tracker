@@ -22,11 +22,22 @@ Or install it yourself:
 $ gem install immosquare-active-record-change-tracker
 ```
 
-then Generate the migration to create the `application_record_histories` table:
+then Generate the migration to create the `active_record_change_trackers` table:
 
 
 ```bash
 rails generate immosquare_active_record_change_tracker:install
+```
+
+```ruby
+create_table(:active_record_change_trackers) do |t|
+  t.references(:recordable, :polymorphic => true, :foreign_key => false, :index => false, :null => false)
+  t.references(:modifier, :polymorphic => true, :foreign_key => false, :index => false, :null => true)
+  t.text(:data, :null => false, :limit => 4_294_967_295)
+  t.datetime(:created_at, :null => false)
+end
+add_index(:active_record_change_trackers, [:recordable_type, :recordable_id])
+add_index :active_record_change_trackers, [:modifier_type, :modifier_id]
 ```
 
 Then run the migration :
@@ -37,11 +48,11 @@ rails db:migrate
 
 ### Usage
 
-To enable history tracking for a model, add `track_application_record` to your model
+To enable history tracking for a model, add `track_active_record_changes` to your model
 
 ```ruby
 class YourModel < ApplicationRecord
-  track_application_record
+  track_active_record_changes
 
   # rest of your model code...
 end
@@ -54,7 +65,7 @@ You can specify options to include or exclude specific attributes:
 
   ```ruby
   class YourModel < ApplicationRecord
-    track_application_record(except: [:attribute1, :attribute2])
+    track_active_record_changes(except: [:attribute1, :attribute2])
   end
   ```
 
@@ -64,7 +75,7 @@ You can specify options to include or exclude specific attributes:
 
   ```ruby
   class YourModel < ApplicationRecord
-    track_application_record(only: [:attribute3, :attribute4])
+    track_active_record_changes(only: [:attribute3, :attribute4])
   end
   ```
 

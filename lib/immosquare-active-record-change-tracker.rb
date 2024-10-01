@@ -9,7 +9,7 @@ module ImmosquareActiveRecordChangeTracker
   extend ActiveSupport::Concern
 
   module ClassMethods
-    def active_record_change_tracker(options = {})
+    def track_active_record_changes(options = {})
       ##============================================================##
       ## Inclut les méthodes d'instance nécessaires
       ##============================================================##
