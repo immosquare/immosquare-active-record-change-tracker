@@ -61,25 +61,45 @@ end
 By default, changes to all attributes (except `created_at` and `updated_at`) will be tracked.
 You can specify options to include or exclude specific attributes:
 
-- **Exclude certain attributes** :
+**Exclude certain attributes** :
 
-  ```ruby
-  class YourModel < ApplicationRecord
-    track_active_record_changes(except: [:attribute1, :attribute2])
+```ruby
+class YourModel < ApplicationRecord
+  track_active_record_changes(except: [:attribute1, :attribute2])
+
+  # rest of your model code...
+end
+```
+
+This will track changes to all attributes except `:attribute1` and `:attribute2`.
+
+**Include only certain attributes** :
+
+```ruby
+class YourModel < ApplicationRecord
+  track_active_record_changes(only: [:attribute3, :attribute4])
+
+  # rest of your model code...
+end
+```
+
+This will track changes only to `:attribute3` and `:attribute4`.
+
+
+**Specify a modifier using a block** :
+
+The modifier can be specified by providing a block to track_active_record_changes, which allows you to capture dynamic context at the time changes are saved. (https://zainab-alshaikhli01.medium.com/activesupport-currentattributes-e3d43270207c)
+
+
+```ruby
+class YourModel < ApplicationRecord
+  track_active_record_changes(except: [:locale]) do
+    ## Your Logic to get the modifier
+    Current.admin.present? ? Current.admin : Current.user
   end
-  ```
-
- This will track changes to all attributes except `:attribute1` and `:attribute2`.
-
-- **Include only certain attributes** :
-
-  ```ruby
-  class YourModel < ApplicationRecord
-    track_active_record_changes(only: [:attribute3, :attribute4])
-  end
-  ```
-
-  This will track changes only to `:attribute3` and `:attribute4`.
+  # rest of your model code...
+end
+```
 
 
 
