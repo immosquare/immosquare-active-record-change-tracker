@@ -30,12 +30,16 @@ module ImmosquareActiveRecordChangeTracker
       ## Configure le callback after_save
       ##============================================================##
       after_save(:save_change_history)
+      after_destroy(:delete_change_history)
     end
   end
 
   module InstanceMethods
     private
 
+    ##============================================================##
+    ## Stocker les changements après un create ou save ou update
+    ##============================================================##
     def save_change_history
       history_options = self.class.history_options
 
@@ -73,6 +77,33 @@ module ImmosquareActiveRecordChangeTracker
         :recordable => self,
         :modifier   => modifier,
         :data       => changes_to_save,
+        :event      => event,
+        :created_at => DateTime.now
+      )
+    end
+
+    ##============================================================##
+    ## Stocker l'évenement destroy
+    ## Pas besoin de data, rien n'a changé.
+    ##============================================================##
+    def delete_change_history
+      ##============================================================##
+      ## Récupéreration du modificateur en exécutant le bloc s'il est défini
+      ##============================================================##
+      modifier = history_options[:modifier_block]&.call
+
+      ##============================================================##
+      ## Gestion de l'event
+      ##============================================================##
+      event = "destroy"
+
+      ##============================================================##
+      ## On crée un enregistrement dans la table d'historique
+      ##============================================================##
+      ImmosquareActiveRecordChangeTracker::HistoryRecord.create!(
+        :recordable => self,
+        :modifier   => modifier,
+        :data       => {},
         :event      => event,
         :created_at => DateTime.now
       )
