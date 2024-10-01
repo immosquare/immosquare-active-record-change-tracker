@@ -9,7 +9,7 @@ module ImmosquareActiveRecordChangeTracker
   extend ActiveSupport::Concern
 
   module ClassMethods
-    def track_active_record_changes(options = {})
+    def track_active_record_changes(options = {}, &modifier_block)
       ##============================================================##
       ## Inclut les méthodes d'instance nécessaires
       ##============================================================##
@@ -20,6 +20,11 @@ module ImmosquareActiveRecordChangeTracker
       ##============================================================##
       class_attribute(:history_options)
       self.history_options = options
+
+      ##============================================================##
+      ## Stocker le bloc du modificateur s'il est fourni
+      ##============================================================##
+      history_options[:modifier_block] = modifier_block if block_given?
 
       ##============================================================##
       ## Configure le callback after_save
@@ -52,16 +57,16 @@ module ImmosquareActiveRecordChangeTracker
       return if changes_to_save.none?
 
       ##============================================================##
-      ## On recherche le modififier
+      ## Récupéreration du modificateur en exécutant le bloc s'il est défini
       ##============================================================##
-
+      modifier = history_options[:modifier_block]&.call
 
       ##============================================================##
       ## On crée un enregistrement dans la table d'historique
       ##============================================================##
       ImmosquareActiveRecordChangeTracker::HistoryRecord.create!(
         :recordable => self,
-        :modifier   => nil,
+        :modifier   => modifier,
         :data       => changes_to_save,
         :created_at => DateTime.now
       )
