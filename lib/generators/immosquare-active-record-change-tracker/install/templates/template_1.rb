@@ -10,7 +10,7 @@ class <%= "#{migration_name} < ActiveRecord::Migration#{migration_version}" %>
     end
 
     add_index(:active_record_change_trackers, [:recordable_type, :recordable_id])
-    add_index :active_record_change_trackers, [:modifier_type, :modifier_id]
+    add_index(:active_record_change_trackers, [:modifier_type, :modifier_id])
   end
 
 end
