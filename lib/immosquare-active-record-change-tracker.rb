@@ -122,18 +122,13 @@ module ImmosquareActiveRecordChangeTracker
       modifier = history_options[:modifier_block]&.call
 
       ##============================================================##
-      ## Gestion de l'event
-      ##============================================================##
-      event = "destroy"
-
-      ##============================================================##
       ## On crée un enregistrement dans la table d'historique
       ##============================================================##
       ImmosquareActiveRecordChangeTracker::HistoryRecord.create!(
         :recordable => self,
         :modifier   => modifier,
-        :data       => {},
-        :event      => event,
+        :data       => nil,
+        :event      => "destroy",
         :created_at => DateTime.now
       )
     end
