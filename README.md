@@ -104,6 +104,28 @@ end
 ```
 
 
+### Accessing Change History
+
+Each model that includes `track_active_record_changes` automatically has access to its change history through the `history_records` association. The history records are ordered by `created_at` in descending order, meaning the most recent changes are listed first.
+
+Example:
+
+```ruby
+class YourModel < ApplicationRecord
+  track_active_record_changes
+
+  # rest of your model code...
+end
+
+```
+
+**Access change history** :
+
+
+  ```ruby
+your_model_instance.history_records
+```
+
 
 ## Contributing
 

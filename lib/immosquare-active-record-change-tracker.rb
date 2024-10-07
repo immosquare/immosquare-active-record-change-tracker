@@ -16,6 +16,15 @@ module ImmosquareActiveRecordChangeTracker
       include(ImmosquareActiveRecordChangeTracker::InstanceMethods)
 
       ##============================================================##
+      ## Ajout de l'association has_many :history_records
+      ##============================================================##
+      has_many(:history_records,
+        -> { order(:created_at => :desc) },
+        :as         => :recordable,
+        :class_name => "ImmosquareActiveRecordChangeTracker::HistoryRecord",
+        :dependent  => :destroy)
+
+      ##============================================================##
       ## Stocker les options dans un attribut de classe
       ##============================================================##
       class_attribute(:history_options)
@@ -27,7 +36,7 @@ module ImmosquareActiveRecordChangeTracker
       history_options[:modifier_block] = modifier_block if block_given?
 
       ##============================================================##
-      ## Configure le callback after_save
+      ## Configure le callback after_save et after_destroy
       ##============================================================##
       after_save(:save_change_history)
       after_destroy(:delete_change_history)
@@ -54,7 +63,6 @@ module ImmosquareActiveRecordChangeTracker
           excluded_fields += [:created_at, :updated_at]
           previous_changes.except(*excluded_fields.uniq.map(&:to_s))
         end
-
 
       ##============================================================##
       ## Gestion de Globalize
@@ -83,19 +91,18 @@ module ImmosquareActiveRecordChangeTracker
         changes_to_save.merge!(globalize_changes)
       end
 
-
       ##============================================================##
       ## Si aucun changement à sauvegarder, on sort
       ##============================================================##
       return if changes_to_save.none?
 
       ##============================================================##
-      ## Récupéreration du modificateur en exécutant le bloc s'il est défini
+      ## Récupération du modificateur en exécutant le bloc s'il est défini
       ##============================================================##
       modifier = history_options[:modifier_block]&.call
 
       ##============================================================##
-      ## Gestion de l'event
+      ## Gestion de l'événement (create ou update)
       ##============================================================##
       event = previously_new_record? ? "create" : "update"
 
@@ -112,7 +119,7 @@ module ImmosquareActiveRecordChangeTracker
     end
 
     ##============================================================##
-    ## Stocker l'évenement destroy
+    ## Stocker l'événement destroy
     ## Pas besoin de data, rien n'a changé.
     ##============================================================##
     def delete_change_history
