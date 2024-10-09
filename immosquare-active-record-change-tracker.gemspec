@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
 
   spec.authors       = ["immosquare"]
   spec.email         = ["jules@immosquare.com"]
-  spec.homepage      = "https://github.com/IMMOSQUARE/immosquare-active-record-change-tracker"
+  spec.homepage      = "https://github.com/immosquare/immosquare-active-record-change-tracker"
 
   spec.summary       = "ActiveRecord Change Tracker"
   spec.description   = "A gem to track changes on ActiveRecord models"

@@ -129,7 +129,7 @@ your_model_instance.history_records
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at [https://github.com/IMMOSQUARE/immosquare-active-record-change-tacker](https://github.com/IMMOSQUARE/immosquare-active-record-change-tacker). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant code of conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
+Bug reports and pull requests are welcome on GitHub at [https://github.com/immosquare/immosquare-active-record-change-tacker](https://github.com/immosquare/immosquare-active-record-change-tacker). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant code of conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
 
 ## License
 
