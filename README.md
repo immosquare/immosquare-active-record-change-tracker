@@ -10,17 +10,6 @@ Add this line to your application's Gemfile:
 gem 'immosquare-active-record-change-tracker'
 ```
 
-Then execute:
-
-```bash
-$ bundle install
-```
-
-Or install it yourself:
-
-```bash
-$ gem install immosquare-active-record-change-tracker
-```
 
 then Generate the migration to create the `active_record_change_trackers` table:
 
@@ -102,6 +91,12 @@ class YourModel < ApplicationRecord
   # rest of your model code...
 end
 ```
+
+## Considerations for Deletion
+
+The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia). If your model has `acts_as_paranoid`, then the deletion of a record will be recorded in the `active_record_change_trackers` table with the event `destroy`, and the records of `create` and `update` will be retained.
+
+Without this gem, the deletion of a record will not be recorded in the `active_record_change_trackers` table, and the records of `create` and `update` will be deleted.
 
 
 ### Accessing Change History
