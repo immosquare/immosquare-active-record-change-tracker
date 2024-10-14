@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    immosquare-active-record-change-tracker (0.1.1)
+    immosquare-active-record-change-tracker (0.1.2)
 
 GEM
   remote: https://rubygems.org/
@@ -116,4 +116,4 @@ DEPENDENCIES
   immosquare-cleaner
 
 BUNDLED WITH
-   2.5.11
+   2.5.21
