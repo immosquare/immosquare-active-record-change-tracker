@@ -9,6 +9,13 @@ module ImmosquareActiveRecordChangeTracker
   extend ActiveSupport::Concern
 
   module ClassMethods
+    ##============================================================##
+    ## Can be improved with other gems like paranoia
+    ##============================================================##
+    def kept_in_db
+      respond_to?(:paranoia_column)
+    end
+
     def track_active_record_changes(options = {}, &modifier_block)
       ##============================================================##
       ## Inclut les méthodes d'instance nécessaires
@@ -16,13 +23,24 @@ module ImmosquareActiveRecordChangeTracker
       include(ImmosquareActiveRecordChangeTracker::InstanceMethods)
 
       ##============================================================##
+      ## Construire dynamiquement les options de l'association
+      ##============================================================##
+      association_options = {
+        :as         => :recordable,
+        :class_name => "ImmosquareActiveRecordChangeTracker::HistoryRecord"
+      }
+
+      ##============================================================##
+      ## Ajouter :dependent => :destroy si acts_as_paranoid n'est pas utilisé
+      ## on se base sur paranoia_column car acts_as_paranoid répond true
+      ## sur tous les modèles du temps que la gem est incluse
+      ##============================================================##
+      association_options[:dependent] = :destroy if !kept_in_db
+
+      ##============================================================##
       ## Ajout de l'association has_many :history_records
       ##============================================================##
-      has_many(:history_records,
-        -> { order(:created_at => :desc) },
-        :as         => :recordable,
-        :class_name => "ImmosquareActiveRecordChangeTracker::HistoryRecord",
-        :dependent  => :destroy)
+      has_many(:history_records, -> { order(:created_at => :desc) }, **association_options)
 
       ##============================================================##
       ## Stocker les options dans un attribut de classe
@@ -45,6 +63,7 @@ module ImmosquareActiveRecordChangeTracker
 
   module InstanceMethods
     private
+
 
     ##============================================================##
     ## Stocker les changements après un create ou save ou update
@@ -119,10 +138,13 @@ module ImmosquareActiveRecordChangeTracker
     end
 
     ##============================================================##
-    ## Stocker l'événement destroy
-    ## Pas besoin de data, rien n'a changé.
+    ## Stocker l'événement destroy que si la classe est paranoïaque
+    ## Si on supprime définitivement de la db, on ne stocke pas l'historique
+    ## de suppression
     ##============================================================##
     def delete_change_history
+      return if !self.class.kept_in_db
+
       ##============================================================##
       ## Récupéreration du modificateur en exécutant le bloc s'il est défini
       ##============================================================##
