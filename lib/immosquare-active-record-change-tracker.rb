@@ -13,7 +13,7 @@ module ImmosquareActiveRecordChangeTracker
     ## Can be improved with other gems like paranoia
     ##============================================================##
     def kept_in_db
-      respond_to?(:paranoia_column)
+      paranoid?
     end
 
     def track_active_record_changes(options = {}, &modifier_block)
@@ -58,12 +58,17 @@ module ImmosquareActiveRecordChangeTracker
       ##============================================================##
       after_save(:save_change_history)
       after_destroy(:delete_change_history)
+      after_real_destroy(:delete_all_change_histories) if paranoid?
     end
   end
 
   module InstanceMethods
     private
 
+
+    def delete_all_change_histories
+      history_records.destroy_all
+    end
 
     ##============================================================##
     ## Stocker les changements après un create ou save ou update

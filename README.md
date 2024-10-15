@@ -37,7 +37,7 @@ Then run the migration :
 rails db:migrate
 ```
 
-### Usage
+## Usage
 
 To enable history tracking for a model, add `track_active_record_changes` to your model
 
@@ -94,12 +94,13 @@ end
 
 ## Considerations for Deletion
 
-The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia). If your model has `acts_as_paranoid`, then the deletion of a record will be recorded in the `active_record_change_trackers` table with the event `destroy`, and the records of `create` and `update` will be retained.
+The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia) : 
+ - If your model has `acts_as_paranoid`, then the deletion of a record will be recorded in the `active_record_change_trackers` table with the event `destroy`, and the records of `create` and `update` will be retained.
+ - A really_destroy! command will completely delete the record from the  `active_record_change_trackers` table.
+ - Without this gem, the deletion of a record will not be recorded in the `active_record_change_trackers` table, and the records of `create` and `update` will be deleted.
 
-Without this gem, the deletion of a record will not be recorded in the `active_record_change_trackers` table, and the records of `create` and `update` will be deleted.
 
-
-### Accessing Change History
+## Accessing Change History
 
 Each model that includes `track_active_record_changes` automatically has access to its change history through the `history_records` association. The history records are ordered by `created_at` in descending order, meaning the most recent changes are listed first.
 
