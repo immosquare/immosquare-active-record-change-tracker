@@ -115,10 +115,21 @@ module ImmosquareActiveRecordChangeTracker
         changes_to_save.merge!(globalize_changes)
       end
 
+
+      ##============================================================##
+      ## On regarde si jamais ce que l'on essaye de sauvegarder contient
+      ## des valeurs identiques.
+      ## ex: quand on met true dans un integer, rails le convertit
+      ## automatiquement en 1 si le champ était déjà en bdd
+      ## -> {"cellar"=>[1, 1]} ou {"cellar"=>[0, 0]}
+      ##============================================================##
+      changes_to_save = changes_to_save.reject {|_k, change_array| change_array[0] == change_array[1] }
+
       ##============================================================##
       ## Si aucun changement à sauvegarder, on sort
       ##============================================================##
       return if changes_to_save.none?
+
 
       ##============================================================##
       ## Récupération du modificateur en exécutant le bloc s'il est défini
