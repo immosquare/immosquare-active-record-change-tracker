@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    immosquare-active-record-change-tracker (0.1.3)
+    immosquare-active-record-change-tracker (0.1.4)
 
 GEM
   remote: https://rubygems.org/
