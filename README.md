@@ -4,14 +4,11 @@ This extension allows you to automatically track changes to your ActiveRecord mo
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
 ```ruby
-gem 'immosquare-active-record-change-tracker'
+gem "immosquare-active-record-change-tracker"
 ```
 
-
-then Generate the migration to create the `active_record_change_trackers` table:
+Generate the migration:
 
 
 ```bash
