@@ -10,10 +10,12 @@ module ImmosquareActiveRecordChangeTracker
 
   module ClassMethods
     ##============================================================##
-    ## Can be improved with other gems like paranoia
+    ## True si le modèle hôte utilise paranoia (acts_as_paranoid).
+    ## La gem paranoia est optionnelle : si elle n'est pas chargée,
+    ## paranoid? n'existe pas — d'où le respond_to?.
     ##============================================================##
-    def kept_in_db
-      paranoid?
+    def kept_in_db?
+      respond_to?(:paranoid?) && paranoid?
     end
 
     def track_active_record_changes(options = {}, &modifier_block)
@@ -31,11 +33,11 @@ module ImmosquareActiveRecordChangeTracker
       }
 
       ##============================================================##
-      ## Ajouter :dependent => :destroy si acts_as_paranoid n'est pas utilisé
-      ## on se base sur paranoia_column car acts_as_paranoid répond true
-      ## sur tous les modèles du temps que la gem est incluse
+      ## Ajouter :dependent => :destroy si acts_as_paranoid n'est pas utilisé.
+      ## Avec paranoia on garde l'historique au soft-delete et on le
+      ## nettoie via after_real_destroy.
       ##============================================================##
-      association_options[:dependent] = :destroy if !kept_in_db
+      association_options[:dependent] = :destroy if !kept_in_db?
 
       ##============================================================##
       ## Ajout de l'association has_many :history_records
@@ -58,7 +60,7 @@ module ImmosquareActiveRecordChangeTracker
       ##============================================================##
       after_save(:save_change_history)
       after_destroy(:delete_change_history)
-      after_real_destroy(:delete_all_change_histories) if paranoid?
+      after_real_destroy(:delete_all_change_histories) if kept_in_db?
     end
   end
 
@@ -74,19 +76,30 @@ module ImmosquareActiveRecordChangeTracker
     ## Stocker les changements après un create ou save ou update
     ##============================================================##
     def save_change_history
-      history_options = self.class.history_options
+      options = self.class.history_options
 
       ##============================================================##
       ## Récupérer les champs à observer
       ##============================================================##
       changes_to_save =
-        if history_options[:only].present?
-          previous_changes.slice(*history_options[:only].map(&:to_s))
+        if options[:only].present?
+          previous_changes.slice(*options[:only].map(&:to_s))
         else
-          excluded_fields = history_options[:except] || []
+          excluded_fields = options[:except] || []
           excluded_fields += [:created_at, :updated_at]
           previous_changes.except(*excluded_fields.uniq.map(&:to_s))
         end
+
+      ##============================================================##
+      ## On regarde si jamais ce que l'on essaye de sauvegarder contient
+      ## des valeurs identiques. Doit s'exécuter AVANT le merge Globalize :
+      ## les entrées de traduction sont des hash {locale => diff} qui ne
+      ## ressemblent pas à un [old, new] et casseraient l'indexation.
+      ## ex: quand on met true dans un integer, rails le convertit
+      ## automatiquement en 1 si le champ était déjà en bdd
+      ## -> {"cellar"=>[1, 1]} ou {"cellar"=>[0, 0]}
+      ##============================================================##
+      changes_to_save = changes_to_save.reject {|_k, change_array| change_array[0] == change_array[1] }
 
       ##============================================================##
       ## Gestion de Globalize
@@ -115,42 +128,12 @@ module ImmosquareActiveRecordChangeTracker
         changes_to_save.merge!(globalize_changes)
       end
 
-
-      ##============================================================##
-      ## On regarde si jamais ce que l'on essaye de sauvegarder contient
-      ## des valeurs identiques.
-      ## ex: quand on met true dans un integer, rails le convertit
-      ## automatiquement en 1 si le champ était déjà en bdd
-      ## -> {"cellar"=>[1, 1]} ou {"cellar"=>[0, 0]}
-      ##============================================================##
-      changes_to_save = changes_to_save.reject {|_k, change_array| change_array[0] == change_array[1] }
-
       ##============================================================##
       ## Si aucun changement à sauvegarder, on sort
       ##============================================================##
       return if changes_to_save.none?
 
-
-      ##============================================================##
-      ## Récupération du modificateur en exécutant le bloc s'il est défini
-      ##============================================================##
-      modifier = history_options[:modifier_block]&.call
-
-      ##============================================================##
-      ## Gestion de l'événement (create ou update)
-      ##============================================================##
-      event = previously_new_record? ? "create" : "update"
-
-      ##============================================================##
-      ## On crée un enregistrement dans la table d'historique
-      ##============================================================##
-      ImmosquareActiveRecordChangeTracker::HistoryRecord.create!(
-        :recordable => self,
-        :modifier   => modifier,
-        :data       => changes_to_save,
-        :event      => event,
-        :created_at => DateTime.now
-      )
+      write_history_record(:event => previously_new_record? ? "create" : "update", :data => changes_to_save)
     end
 
     ##============================================================##
@@ -159,22 +142,23 @@ module ImmosquareActiveRecordChangeTracker
     ## de suppression
     ##============================================================##
     def delete_change_history
-      return if !self.class.kept_in_db
+      return if !self.class.kept_in_db?
 
-      ##============================================================##
-      ## Récupéreration du modificateur en exécutant le bloc s'il est défini
-      ##============================================================##
-      modifier = history_options[:modifier_block]&.call
+      write_history_record(:event => "destroy", :data => nil)
+    end
 
-      ##============================================================##
-      ## On crée un enregistrement dans la table d'historique
-      ##============================================================##
+    ##============================================================##
+    ## Écrit une entrée dans la table d'historique. Le modifier est
+    ## résolu à la volée via le bloc passé à track_active_record_changes
+    ## (souvent un Current.user/admin).
+    ##============================================================##
+    def write_history_record(event:, data:)
       ImmosquareActiveRecordChangeTracker::HistoryRecord.create!(
         :recordable => self,
-        :modifier   => modifier,
-        :data       => nil,
-        :event      => "destroy",
-        :created_at => DateTime.now
+        :modifier   => self.class.history_options[:modifier_block]&.call,
+        :data       => data,
+        :event      => event,
+        :created_at => Time.current
       )
     end
   end
