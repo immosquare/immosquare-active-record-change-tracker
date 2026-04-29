@@ -19,4 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.6")
+
+  spec.add_dependency("activerecord", ">= 6.1")
+  spec.add_dependency("railties",     ">= 6.1")
 end
