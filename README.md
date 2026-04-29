@@ -89,12 +89,53 @@ class YourModel < ApplicationRecord
 end
 ```
 
+## Security Considerations
+
+The gem stores the **before/after values** of every changed attribute in the `data` JSON column of `active_record_change_trackers`. Two things to keep in mind:
+
+### 1. Filter sensitive attributes
+
+By default, every attribute except `created_at` and `updated_at` is tracked. If you enable tracking on a model that holds sensitive data, those values will be persisted in plaintext (or as their stored representation) inside the history table.
+
+Always exclude credentials, tokens and regulated PII explicitly:
+
+```ruby
+class User < ApplicationRecord
+  track_active_record_changes(except: [
+    :password_digest,
+    :encrypted_password,
+    :reset_password_token,
+    :confirmation_token,
+    :unlock_token,
+    :remember_token,
+    :api_token
+  ])
+end
+```
+
+The safer pattern is to use `only:` with an explicit allow-list of the attributes you actually want to audit, rather than relying on `except:` to remember every sensitive field.
+
+### 2. Protect access to `history_records`
+
+The gem does not enforce any authorization on the `history_records` association. Never expose it through an API, a serializer or an admin view without an access control layer — doing so leaks the full diff history of the record, including any field you forgot to exclude in step 1.
+
 ## Considerations for Deletion
 
-The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia) : 
+The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia) :
  - If your model has `acts_as_paranoid`, then the deletion of a record will be recorded in the `active_record_change_trackers` table with the event `destroy`, and the records of `create` and `update` will be retained.
  - A really_destroy! command will completely delete the record from the  `active_record_change_trackers` table.
  - Without this gem, the deletion of a record will not be recorded in the `active_record_change_trackers` table, and the records of `create` and `update` will be deleted.
+
+### Order matters with paranoia
+
+`acts_as_paranoid` must be declared **before** `track_active_record_changes`. The tracker reads `paranoid?` at macro-call time to decide between `dependent: :destroy` (hard cleanup) and `after_real_destroy` (paranoia-aware cleanup). If you call `track_active_record_changes` first, the tracker will treat the model as non-paranoid and hard-delete the history on every soft-delete.
+
+```ruby
+class YourModel < ApplicationRecord
+  acts_as_paranoid                  # first
+  track_active_record_changes       # then
+end
+```
 
 
 ## Accessing Change History
