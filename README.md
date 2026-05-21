@@ -119,6 +119,28 @@ The safer pattern is to use `only:` with an explicit allow-list of the attribute
 
 The gem does not enforce any authorization on the `history_records` association. Never expose it through an API, a serializer or an admin view without an access control layer — doing so leaks the full diff history of the record, including any field you forgot to exclude in step 1.
 
+## Translated attributes (Globalize)
+
+If your model uses [Globalize](https://github.com/globalize/globalize), the tracker automatically merges translation diffs into the `data` column, indexed by locale. No extra configuration is required — the tracker detects `translated_attribute_names` and reads `previous_changes` from each `Globalize::ActiveRecord::Translation` after save.
+
+For a translated attribute, the stored diff is a hash keyed by locale instead of a flat `[old, new]` array:
+
+```ruby
+##============================================================##
+## Untranslated attribute (regular column)
+##============================================================##
+record.data
+# => {"title" => ["Hello", "Hi"]}
+
+##============================================================##
+## Translated attribute (Globalize)
+##============================================================##
+record.data
+# => {"title" => {"fr" => ["Bonjour", "Salut"], "en" => ["Hello", "Hi"]}}
+```
+
+Translation changes where both the old and new values are blank (`nil ↔ ""`) are silently skipped — they would otherwise pollute the history with empty diffs every time a translation is saved without a real change.
+
 ## Considerations for Deletion
 
 The gem is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia) :
@@ -142,28 +164,36 @@ end
 
 Each model that includes `track_active_record_changes` automatically has access to its change history through the `history_records` association. The history records are ordered by `created_at` in descending order, meaning the most recent changes are listed first.
 
-Example:
-
 ```ruby
 class YourModel < ApplicationRecord
   track_active_record_changes
-
-  # rest of your model code...
 end
 
+your_model_instance.history_records
 ```
 
-**Access change history** :
+Each `history_record` is an instance of `ImmosquareActiveRecordChangeTracker::HistoryRecord` (table `active_record_change_trackers`) and exposes:
 
+| Attribute    | Type                | Description                                                                                                           |
+| ------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `recordable` | Polymorphic         | The tracked record (e.g. the `YourModel` instance).                                                                   |
+| `modifier`   | Polymorphic (`nil`) | The author returned by the block passed to `track_active_record_changes`.                                             |
+| `event`      | String              | One of `"create"`, `"update"`, `"destroy"`.                                                                           |
+| `data`       | JSON                | Hash of `{attribute => [old, new]}` (or `{attribute => {locale => [...]}}` for Globalize). `nil` on `destroy` events. |
+| `created_at` | Datetime            | Timestamp of the change (`Time.current` at write time).                                                               |
 
-  ```ruby
-your_model_instance.history_records
+Changes where the old and new values are equal after typecast (e.g. `[1, 1]` when assigning `true` to an integer column already at `1`) are filtered out and never written.
+
+To check whether a model is paranoia-aware from the tracker's point of view:
+
+```ruby
+YourModel.kept_in_db?  # => true if acts_as_paranoid is declared, false otherwise
 ```
 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at [https://github.com/immosquare/immosquare-active-record-change-tacker](https://github.com/immosquare/immosquare-active-record-change-tacker). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant code of conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
+Bug reports and pull requests are welcome on GitHub at [https://github.com/immosquare/immosquare-active-record-change-tracker](https://github.com/immosquare/immosquare-active-record-change-tracker). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant code of conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
 
 ## License
 
