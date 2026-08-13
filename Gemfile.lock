@@ -184,6 +184,8 @@ GEM
       rbs (>= 3, < 5)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
+    simplecov (1.1.1)
+    simplecov-lcov (0.9.0)
     smart_properties (1.17.0)
     sqlite3 (2.9.5-arm64-darwin)
     sqlite3 (2.9.5-x86_64-darwin)
@@ -215,6 +217,8 @@ DEPENDENCIES
   rake
   rspec
   ruby-lsp
+  simplecov
+  simplecov-lcov
   sqlite3
 
 BUNDLED WITH
