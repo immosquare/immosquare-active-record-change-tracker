@@ -1,3 +1,10 @@
+---
+locale: en
+tags:
+  - app:immosquare-active-record-change-tracker
+  - audience:technique
+---
+
 # immosquare Active Record Change Tracker
 
 This extension allows you to automatically track changes to your ActiveRecord models. It records changes to specified attributes whenever a record is saved.
