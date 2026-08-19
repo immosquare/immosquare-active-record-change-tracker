@@ -198,6 +198,47 @@ YourModel.kept_in_db?  # => true if acts_as_paranoid is declared, false otherwis
 ```
 
 
+## Development
+
+The suite boots a real ActiveRecord against an in-memory SQLite database, so no service needs to be running:
+
+```bash
+bundle install
+bundle exec rspec
+```
+
+Dependencies are split in two groups, and the split is load-bearing:
+
+| Group         | Holds                                                              | Installed on CI |
+| ------------- | ------------------------------------------------------------------ | --------------- |
+| `development` | Editor and linter tooling (`ruby-lsp`, `immosquare-cleaner`, rake)  | No              |
+| `test`        | What the specs need to run (`rspec`, `sqlite3`, `paranoia`, coverage) | Yes           |
+
+Anything a spec requires belongs to `test`: the CI exports `BUNDLE_WITHOUT=development`, so a gem left in `development` is missing at run time.
+
+### Coverage
+
+Coverage is off by default — a plain `bundle exec rspec` stays fast and leaves no `coverage/` directory behind. Enable it with an environment variable:
+
+```bash
+COVERAGE=true bundle exec rspec
+# => coverage/lcov.info  (LCOV, consumed by the CI)
+# => coverage/index.html (HTML report)
+```
+
+`spec/coverage_helper.rb` starts SimpleCov before the library is loaded, which is why `.rspec` requires it **above** `spec_helper`. Reversing that order reports 0%.
+
+### Continuous integration
+
+`Jenkinsfile` drives the build through `bin/ci`, a two-step entry point that behaves identically on a laptop and on a build agent:
+
+| Command       | Does                                                                     |
+| ------------- | ------------------------------------------------------------------------ |
+| `bin/ci init` | `bundle install` without the `development` group                          |
+| `bin/ci test` | `bundle exec rspec`                                                      |
+
+Everything specific to the build agent — RVM provisioning of the ruby in `.ruby-version`, bundler pinning — runs only when `JENKINS_WORKSPACE` is set. The pipeline exports `COVERAGE=true` and publishes `coverage/lcov.info` through the Jenkins coverage recorder.
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at [https://github.com/immosquare/immosquare-active-record-change-tracker](https://github.com/immosquare/immosquare-active-record-change-tracker). This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant code of conduct](https://www.contributor-covenant.org/version/2/0/code_of_conduct/).
