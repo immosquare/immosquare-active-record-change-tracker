@@ -1,6 +1,6 @@
 ActiveRecord::Schema.define do
   ##============================================================##
-  ## Table fournie par la gem (équivalent à la migration générée)
+  ## Table shipped by the gem (mirrors the generated migration)
   ##============================================================##
   create_table(:active_record_change_trackers, :force => true) do |t|
     t.references(:recordable, :polymorphic => true, :null => false, :index => true)
@@ -11,8 +11,9 @@ ActiveRecord::Schema.define do
   end
 
   ##============================================================##
-  ## Tables de fixtures — une par scénario pour isoler les options
-  ## de track_active_record_changes (qui sont stockées au niveau classe).
+  ## Fixture tables — one per scenario, to isolate the
+  ## track_active_record_changes options, which are stored at the
+  ## class level.
   ##============================================================##
   [:default_articles, :only_articles, :except_articles, :modifier_articles].each do |table_name|
     create_table(table_name, :force => true) do |t|
@@ -25,7 +26,7 @@ ActiveRecord::Schema.define do
   end
 
   ##============================================================##
-  ## Table dédiée à la fixture paranoïaque (deleted_at requis par paranoia)
+  ## Table for the paranoid fixture (paranoia requires deleted_at)
   ##============================================================##
   create_table(:paranoid_articles, :force => true) do |t|
     t.string(:title)

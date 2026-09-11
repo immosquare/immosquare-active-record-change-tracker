@@ -3,9 +3,9 @@ require "paranoia"
 require "immosquare-active-record-change-tracker"
 
 ##============================================================##
-## ActiveRecord Railtie ne peut pas booter sans une Rails::Application.
-## On déclenche manuellement le hook on_load qu'elle aurait dû lancer
-## pour étendre AR::Base avec les ClassMethods de la gem.
+## The ActiveRecord railtie cannot boot without a Rails::Application,
+## so the on_load hook it would have run is fired by hand to extend
+## AR::Base with the gem ClassMethods.
 ##============================================================##
 ActiveSupport.on_load(:active_record) do
   extend ImmosquareActiveRecordChangeTracker::ClassMethods
@@ -14,15 +14,15 @@ ActiveSupport.on_load(:active_record) do
 end
 
 ##============================================================##
-## On reproduit le défaut Rails 5+ d'une vraie app (config par défaut
-## générée avec rails new). Sans ça, belongs_to_required_by_default
-## reste à nil et un test qui sauvegarde un modifier=nil passe alors
-## qu'il crasherait dans une app hôte.
+## Reproduce the Rails 5+ default of a real app (the configuration
+## `rails new` generates). Without it belongs_to_required_by_default
+## stays nil, and a spec saving modifier=nil would pass here while
+## crashing inside a host app.
 ##============================================================##
 ActiveRecord::Base.belongs_to_required_by_default = true
 
 ##============================================================##
-## SQLite en mémoire pour tester les callbacks et la persistance
+## In-memory SQLite, to exercise the callbacks and the persistence
 ##============================================================##
 ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
 ActiveRecord::Migration.verbose = false

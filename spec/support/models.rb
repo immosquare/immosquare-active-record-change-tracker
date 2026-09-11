@@ -1,6 +1,6 @@
 ##============================================================##
-## Modèles de tests — un par scénario pour isoler les options
-## passées à track_active_record_changes (stockées via class_attribute).
+## Test models — one per scenario, to isolate the options passed to
+## track_active_record_changes, which are stored in a class_attribute.
 ##============================================================##
 class Author < ActiveRecord::Base
 end
@@ -32,8 +32,8 @@ class ModifierArticle < ActiveRecord::Base
 end
 
 ##============================================================##
-## acts_as_paranoid AVANT track_active_record_changes :
-## le tracker lit paranoid? au moment du macro-call.
+## acts_as_paranoid must come BEFORE track_active_record_changes:
+## the tracker reads paranoid? at macro-call time.
 ##============================================================##
 class ParanoidArticle < ActiveRecord::Base
 

@@ -1,7 +1,7 @@
 module ImmosquareActiveRecordChangeTracker
   ##============================================================##
-  ## On nome le modèle différemment que ApplicationRecordHistory
-  ## pour éviter les conflits avec le nom du module.
+  ## The model is deliberately not named ApplicationRecordHistory, to
+  ## avoid clashing with the module name.
   ##============================================================##
   class HistoryRecord < ::ActiveRecord::Base
 

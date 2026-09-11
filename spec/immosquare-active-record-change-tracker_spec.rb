@@ -6,8 +6,8 @@ require "spec_helper"
 RSpec.describe(ImmosquareActiveRecordChangeTracker) do
   let(:history) { ImmosquareActiveRecordChangeTracker::HistoryRecord }
 
-  describe("tracking par défaut") do
-    it("log un événement create avec les attributs renseignés") do
+  describe("default tracking") do
+    it("logs a create event with the assigned attributes") do
       article = DefaultArticle.create!(:title => "Hello", :content => "World")
       record  = history.last
 
@@ -18,7 +18,7 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       expect(record.data["content"].last).to(eq("World"))
     end
 
-    it("log un événement update avec uniquement le diff") do
+    it("logs an update event holding the diff only") do
       article = DefaultArticle.create!(:title => "Hello", :content => "World")
       article.update!(:title => "Hi")
       record = history.where(:event => "update").last
@@ -26,7 +26,7 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       expect(record.data).to(eq({"title" => ["Hello", "Hi"]}))
     end
 
-    it("exclut created_at et updated_at par défaut") do
+    it("excludes created_at and updated_at by default") do
       DefaultArticle.create!(:title => "Hello")
       record = history.last
 
@@ -34,12 +34,12 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       expect(record.data).not_to(have_key("updated_at"))
     end
 
-    it("ne crée aucune entrée quand previous_changes est vide") do
+    it("writes no row when previous_changes is empty") do
       article = DefaultArticle.create!(:title => "Hello")
       expect { article.save! }.not_to(change { history.count })
     end
 
-    it("supprime l'historique au hard destroy (pas de paranoia)") do
+    it("deletes the history on a hard destroy (no paranoia)") do
       article = DefaultArticle.create!(:title => "Hello")
       article.update!(:title => "Hi")
       expect(history.where(:recordable_type => "DefaultArticle", :recordable_id => article.id).count).to(eq(2))
@@ -49,8 +49,8 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
     end
   end
 
-  describe("option :only") do
-    it("ne tracke que les attributs listés") do
+  describe(":only option") do
+    it("tracks the listed attributes only") do
       OnlyArticle.create!(:title => "Hello", :content => "World", :views => 5)
       record = history.last
 
@@ -58,8 +58,8 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
     end
   end
 
-  describe("option :except") do
-    it("exclut les attributs listés en plus de created_at/updated_at") do
+  describe(":except option") do
+    it("excludes the listed attributes on top of created_at/updated_at") do
       ExceptArticle.create!(:title => "Hello", :views => 5)
       record = history.last
 
@@ -69,8 +69,8 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
     end
   end
 
-  describe("bloc modifier") do
-    it("capture le modifier renvoyé par le bloc") do
+  describe("modifier block") do
+    it("captures the modifier returned by the block") do
       author = Author.create!(:name => "Alice")
       Thread.current[:test_modifier] = author
 
@@ -79,7 +79,7 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       expect(history.last.modifier).to(eq(author))
     end
 
-    it("stocke un modifier null si le bloc retourne nil") do
+    it("stores a null modifier when the block returns nil") do
       Thread.current[:test_modifier] = nil
       ModifierArticle.create!(:title => "Hello")
 
@@ -88,24 +88,24 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
   end
 
   describe(".kept_in_db?") do
-    it("retourne false quand le modèle n'utilise pas acts_as_paranoid") do
+    it("returns false when the model does not use acts_as_paranoid") do
       expect(DefaultArticle.kept_in_db?).to(eq(false))
     end
 
-    it("retourne true quand le modèle utilise acts_as_paranoid") do
+    it("returns true when the model uses acts_as_paranoid") do
       expect(ParanoidArticle.kept_in_db?).to(eq(true))
     end
   end
 
-  describe("filtre des valeurs identiques") do
+  describe("identical value filtering") do
     ##============================================================##
-    ## Cible directement la branche line ~128 :
-    ## changes_to_save.reject {|_k, v| v[0] == v[1] }.
-    ## On stub previous_changes pour simuler le cas "true → 1"
-    ## après typecast Rails (impossible à reproduire de façon
-    ## déterministe avec un update! sur sqlite).
+    ## Targets the changes_to_save.reject {|_k, v| v[0] == v[1] }
+    ## branch directly.
+    ## previous_changes is stubbed to simulate the "true -> 1" case
+    ## after the Rails typecast, which cannot be reproduced
+    ## deterministically with an update! on sqlite.
     ##============================================================##
-    it("n'enregistre pas un changement quand l'ancienne et la nouvelle valeur sont égales") do
+    it("does not record a change whose old and new values are equal") do
       article = DefaultArticle.create!(:title => "Hello")
       history.delete_all
 
@@ -116,8 +116,8 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
     end
   end
 
-  describe("intégration paranoia") do
-    it("log un événement destroy au soft-delete et conserve l'historique create/update") do
+  describe("paranoia integration") do
+    it("logs a destroy event on soft-delete and keeps the create/update history") do
       article = ParanoidArticle.create!(:title => "Hello")
       article.update!(:title => "Hi")
       article.destroy
@@ -126,7 +126,7 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       expect(records.pluck(:event)).to(match_array(["create", "update", "destroy"]))
     end
 
-    it("supprime tout l'historique au really_destroy!") do
+    it("deletes the whole history on really_destroy!") do
       article = ParanoidArticle.create!(:title => "Hello")
       article.update!(:title => "Hi")
       article.really_destroy!
@@ -135,14 +135,14 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
     end
   end
 
-  describe("intégration Globalize (stubs)") do
+  describe("Globalize integration (stubbed)") do
     ##============================================================##
-    ## Globalize n'est pas chargée dans la suite ; on simule la
-    ## surface utilisée par save_change_history (translations +
-    ## translated_attribute_names) pour valider le merge des diffs
-    ## de traduction dans data.
+    ## Globalize is not loaded in the suite: the surface
+    ## save_change_history relies on (translations +
+    ## translated_attribute_names) is faked, to check that translation
+    ## diffs are merged into data.
     ##============================================================##
-    it("merge les changements de traductions dans data, indexés par locale") do
+    it("merges translation changes into data, indexed by locale") do
       article          = DefaultArticle.create!(:title => "Hello")
       fake_translation = Struct.new(:locale, :previous_changes).new(:fr, {"title" => ["Bonjour", "Salut"]})
       history.delete_all
@@ -153,14 +153,14 @@ RSpec.describe(ImmosquareActiveRecordChangeTracker) do
       article.update!(:content => "World")
 
       ##============================================================##
-      ## data passe par JSON (serialize :data, :coder => JSON), donc
-      ## les symboles deviennent des strings au round-trip.
+      ## data goes through JSON (serialize :data, :coder => JSON), so
+      ## symbols come back as strings after the round-trip.
       ##============================================================##
       record = history.last
       expect(record.data["title"]["fr"]).to(eq(["Bonjour", "Salut"]))
     end
 
-    it("ignore les changements de traduction où old et new sont blank (nil ↔ \"\")") do
+    it("ignores translation changes where old and new are blank (nil <-> \"\")") do
       article          = DefaultArticle.create!(:title => "Hello")
       fake_translation = Struct.new(:locale, :previous_changes).new(:fr, {"title" => [nil, ""]})
       history.delete_all

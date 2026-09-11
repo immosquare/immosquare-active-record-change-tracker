@@ -6,12 +6,12 @@ module ImmosquareActiveRecordChangeTracker
     initializer "immosquare_active_record_change_tracker.active_record" do
       ActiveSupport.on_load(:active_record) do
         ##============================================================##
-        ## Pour ajouter une gestion de l'historique des modifications
+        ## Expose the change-tracking macro on every model
         ##============================================================##
         extend ImmosquareActiveRecordChangeTracker::ClassMethods
 
         ##============================================================##
-        ## Définir la classe HistoryRecord après le chargement d'ActiveRecord
+        ## Define the HistoryRecord class once ActiveRecord is loaded
         ##============================================================##
         require "immosquare-active-record-change-tracker/models/history_record"
       end
