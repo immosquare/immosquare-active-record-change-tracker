@@ -207,7 +207,7 @@ Dependencies are split in two groups, and the split is load-bearing — each gro
 
 Anything a spec requires belongs to `test`: the CI exports `BUNDLE_WITHOUT=development`, so a gem left in `development` is missing at run time.
 
-## Coverage reports and the Jenkins continuous integration pipeline
+## Coverage reports and the continuous integration pipeline
 
 Coverage is off by default — a plain `bundle exec rspec` stays fast and leaves no `coverage/` directory behind. Enable it with an environment variable:
 
@@ -219,14 +219,15 @@ COVERAGE=true bundle exec rspec
 
 `spec/coverage_helper.rb` starts SimpleCov before the library is loaded, which is why `.rspec` requires it **above** `spec_helper`. Reversing that order reports 0%.
 
-`Jenkinsfile` drives the build through `bin/ci`, a two-step entry point that behaves identically on a laptop and on a build agent:
+The CI drives the build through `bin/ci`, the single entry point, which behaves identically on a laptop and on a build agent:
 
 | Command       | Does                                                                     |
 | ------------- | ------------------------------------------------------------------------ |
 | `bin/ci init` | `bundle install` without the `development` group                          |
 | `bin/ci test` | `bundle exec rspec`                                                      |
+| `bin/ci`      | Both, in that order (the default, `all`)                                  |
 
-Everything specific to the build agent — RVM provisioning of the ruby in `.ruby-version`, bundler pinning — runs only when `JENKINS_WORKSPACE` is set. The pipeline exports `COVERAGE=true` and publishes `coverage/lcov.info` through the Jenkins coverage recorder.
+The script provisions nothing itself: the CI runner selects the Ruby of `.ruby-version` and the gemset of `.ruby-gemset` before calling it, which is why it behaves the same on a laptop. It exports `COVERAGE=true` unless the variable is already set, and the CI collects `coverage/lcov.info`.
 
 ## Contributing to the gem, and license
 
