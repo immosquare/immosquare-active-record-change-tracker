@@ -200,10 +200,10 @@ bundle exec rspec
 
 Dependencies are split in two groups, and the split is load-bearing — each group holds a different kind of dependency, and only one of the two is installed on CI:
 
-| Group         | Holds                                                              | Installed on CI |
-| ------------- | ------------------------------------------------------------------ | --------------- |
-| `development` | Editor and linter tooling (`ruby-lsp`, `immosquare-cleaner`, rake)  | No              |
-| `test`        | What the specs need to run (`rspec`, `sqlite3`, `paranoia`, coverage) | Yes           |
+| Group         | Holds                                                                 | Installed on CI |
+| ------------- | --------------------------------------------------------------------- | --------------- |
+| `development` | Editor and linter tooling (`ruby-lsp`, `immosquare-cleaner`, rake)    | No              |
+| `test`        | What the specs need to run (`rspec`, `sqlite3`, `paranoia`, coverage) | Yes             |
 
 Anything a spec requires belongs to `test`: the CI exports `BUNDLE_WITHOUT=development`, so a gem left in `development` is missing at run time.
 
@@ -223,9 +223,9 @@ The CI drives the build through `bin/ci`, the single entry point, which behaves 
 
 | Command       | Does                                                                     |
 | ------------- | ------------------------------------------------------------------------ |
-| `bin/ci init` | `bundle install` without the `development` group                          |
+| `bin/ci init` | `bundle install` without the `development` group                         |
 | `bin/ci test` | `bundle exec rspec`                                                      |
-| `bin/ci`      | Both, in that order (the default, `all`)                                  |
+| `bin/ci`      | Both, in that order (the default, `all`)                                 |
 
 The script provisions nothing itself: the CI runner selects the Ruby of `.ruby-version` and the gemset of `.ruby-gemset` before calling it, which is why it behaves the same on a laptop. It exports `COVERAGE=true` unless the variable is already set, and the CI collects `coverage/lcov.info`.
 

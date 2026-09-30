@@ -4,12 +4,12 @@ Gem de tracking automatique des changements ActiveRecord. Enregistre les modific
 
 ## Architecture
 
-| Fichier | Rôle |
-|---------|------|
-| `lib/immosquare-active-record-change-tracker.rb` | Module principal avec `track_active_record_changes` |
-| `lib/.../railtie.rb` | Intégration Rails (extend ActiveRecord) |
-| `lib/.../models/history_record.rb` | Modèle `HistoryRecord` pour le stockage |
-| `lib/generators/.../install/install_generator.rb` | Générateur de migration |
+| Fichier                                           | Rôle                                                |
+| ------------------------------------------------- | --------------------------------------------------- |
+| `lib/immosquare-active-record-change-tracker.rb`  | Module principal avec `track_active_record_changes` |
+| `lib/.../railtie.rb`                              | Intégration Rails (extend ActiveRecord)             |
+| `lib/.../models/history_record.rb`                | Modèle `HistoryRecord` pour le stockage             |
+| `lib/generators/.../install/install_generator.rb` | Générateur de migration                             |
 
 ## Fonctionnement
 
