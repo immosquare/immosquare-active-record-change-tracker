@@ -95,7 +95,7 @@ end
 
 ## Security — filtering sensitive attributes and protecting `history_records`
 
-`immosquare-active-record-change-tracker` stores the **before/after values** of every changed attribute in the `data` JSON column of `active_record_change_trackers`. Two things to keep in mind:
+`immosquare-active-record-change-tracker` stores the **before/after values** of every changed attribute as JSON in the `data` text column of `active_record_change_trackers` (`serialize` with a JSON coder; the column itself is `text`, not a native JSON type). Two things to keep in mind:
 
 **1. Filter sensitive attributes.** By default, every attribute except `created_at` and `updated_at` is tracked. If you enable tracking on a model that holds sensitive data, those values will be persisted in plaintext (or as their stored representation) inside the history table.
 
@@ -145,8 +145,8 @@ Translation changes where both the old and new values are blank (`nil ↔ ""`) a
 
 `immosquare-active-record-change-tracker` is compatible with the paranoia gem (https://github.com/rubysherpas/paranoia) :
  - If your model has `acts_as_paranoid`, then the deletion of a record will be recorded in the `active_record_change_trackers` table with the event `destroy`, and the records of `create` and `update` will be retained.
- - A really_destroy! command will completely delete the record from the  `active_record_change_trackers` table.
- - Without this gem, the deletion of a record will not be recorded in the `active_record_change_trackers` table, and the records of `create` and `update` will be deleted.
+ - A `really_destroy!` deletes every history row of that record from `active_record_change_trackers`.
+ - Without paranoia, deleting a record writes no `destroy` event, and the `create` and `update` rows are deleted with the record (`dependent: :destroy` on `history_records`).
 
 **Order matters with paranoia.** `acts_as_paranoid` must be declared **before** `track_active_record_changes`. The tracker reads `paranoid?` at macro-call time to decide between `dependent: :destroy` (hard cleanup) and `after_real_destroy` (paranoia-aware cleanup). If you call `track_active_record_changes` first, the tracker will treat the model as non-paranoid and hard-delete the history on every soft-delete.
 
@@ -172,13 +172,13 @@ your_model_instance.history_records
 
 Each `history_record` is an instance of `ImmosquareActiveRecordChangeTracker::HistoryRecord` (table `active_record_change_trackers`) and exposes:
 
-| Attribute    | Type                | Description                                                                                                           |
-| ------------ | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `recordable` | Polymorphic         | The tracked record (e.g. the `YourModel` instance).                                                                   |
-| `modifier`   | Polymorphic (`nil`) | The author returned by the block passed to `track_active_record_changes`.                                             |
-| `event`      | String              | One of `"create"`, `"update"`, `"destroy"`.                                                                           |
-| `data`       | JSON                | Hash of `{attribute => [old, new]}` (or `{attribute => {locale => [...]}}` for Globalize). `nil` on `destroy` events. |
-| `created_at` | Datetime            | Timestamp of the change (`Time.current` at write time).                                                               |
+| Attribute    | Type                | Description                                                                                                                        |
+| ------------ | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `recordable` | Polymorphic         | The tracked record (e.g. the `YourModel` instance).                                                                                |
+| `modifier`   | Polymorphic (`nil`) | The author returned by the block passed to `track_active_record_changes`.                                                          |
+| `event`      | String              | One of `"create"`, `"update"`, `"destroy"`.                                                                                        |
+| `data`       | Hash                | `{attribute => [old, new]}` (or `{attribute => {locale => [...]}}` for Globalize), stored as JSON text. `nil` on `destroy` events. |
+| `created_at` | Datetime            | Timestamp of the change (`Time.current` at write time).                                                                            |
 
 Changes where the old and new values are equal after typecast (e.g. `[1, 1]` when assigning `true` to an integer column already at `1`) are filtered out and never written.
 
@@ -200,12 +200,14 @@ bundle exec rspec
 
 Dependencies are split in two groups, and the split is load-bearing — each group holds a different kind of dependency, and only one of the two is installed on CI:
 
-| Group         | Holds                                                                 | Installed on CI |
-| ------------- | --------------------------------------------------------------------- | --------------- |
-| `development` | Editor and linter tooling (`ruby-lsp`, `immosquare-cleaner`, rake)    | No              |
-| `test`        | What the specs need to run (`rspec`, `sqlite3`, `paranoia`, coverage) | Yes             |
+| Group         | Holds                                                                             | Installed on CI |
+| ------------- | --------------------------------------------------------------------------------- | --------------- |
+| `development` | Editor and linter tooling (`ruby-lsp`, `immosquare-cleaner`, rake)                | No              |
+| `test`        | What the specs need to run (`rspec`, `sqlite3`, `paranoia`, `json` < 3, coverage) | Yes             |
 
 Anything a spec requires belongs to `test`: the CI exports `BUNDLE_WITHOUT=development`, so a gem left in `development` is missing at run time.
+
+The `test` group pins `json` below 3. The `json` 3.x API requires keyword arguments, and `ActiveSupport::JSON.decode` still passes the parse options positionally, so loading a `HistoryRecord` `data` value raises `ArgumentError` and the suite does not boot. Drop the pin when ActiveSupport forwards those options as keywords.
 
 ## Coverage reports and the continuous integration pipeline
 
