@@ -1,4 +1,6 @@
 ---
+created_at: "2024-09-30"
+updated_at: "2026-09-30"
 locale: en
 tags:
   - app:immosquare-active-record-change-tracker
